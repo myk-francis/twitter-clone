@@ -1,3 +1,4 @@
+import React from "react";
 import { type NextPage } from "next";
 import Head from "next/head";
 // import Link from "next/link";
@@ -12,6 +13,14 @@ dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const ctx = api.useContext();
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.posts.getAll.invalidate();
+    },
+  });
+  const [input, setInput] = React.useState<string>("");
 
   console.log(user);
 
@@ -30,7 +39,16 @@ const CreatePostWizard = () => {
         type="text"
         placeholder="Type some emojis"
         className="grow bg-transparent"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
       />
+      <button
+        className="btn btn-primary"
+        onClick={() => mutate({ content: input })}
+        disabled={isPosting}
+      >
+        Post
+      </button>
     </div>
   );
 };
@@ -64,13 +82,9 @@ const PostView = (props: PostWithUser) => {
 
 const Home: NextPage = () => {
   // const hello = api.example.hello.useQuery({ text: "from tRPC" });
-  const { data, isLoading } = api.posts.getAll.useQuery();
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  const user = useUser();
-
-  // if (isLoading) return <div>Loading...</div>;
-
-  // if (!data) return <div>Something went wrong!!!</div>;
+  const { user, isLoaded: userLoaded, isSignedIn } = useUser();
 
   return (
     <>
@@ -82,19 +96,19 @@ const Home: NextPage = () => {
       <main className="flex h-screen justify-center">
         <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
           <div className="flex border-b border-slate-200 p-4">
-            {!user.isSignedIn && (
+            {!isSignedIn && (
               <div className="flex justify-center">
                 <SignInButton />
               </div>
             )}
-            {!!user.isSignedIn && (
+            {!!isSignedIn && (
               <div>
                 <CreatePostWizard />
               </div>
             )}
           </div>
           <div className="flex flex-col">
-            {isLoading ? (
+            {postsLoading ? (
               <div className="mt-2 flex w-full items-center justify-center">
                 <LoadingSpinner size={40} />
               </div>
