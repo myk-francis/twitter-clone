@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { RouterOutputs } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import LoadingSpinner from "~/components/loading";
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
@@ -67,9 +68,9 @@ const Home: NextPage = () => {
 
   const user = useUser();
 
-  if (isLoading) return <div>Loading...</div>;
+  // if (isLoading) return <div>Loading...</div>;
 
-  if (!data) return <div>Something went wrong!!!</div>;
+  // if (!data) return <div>Something went wrong!!!</div>;
 
   return (
     <>
@@ -93,9 +94,17 @@ const Home: NextPage = () => {
             )}
           </div>
           <div className="flex flex-col">
-            {data?.map(({ post, author }) => (
-              <PostView key={post.id} post={post} author={author} />
-            ))}
+            {isLoading ? (
+              <div className="mt-2 flex w-full items-center justify-center">
+                <LoadingSpinner size={40} />
+              </div>
+            ) : (
+              <>
+                {data?.map(({ post, author }) => (
+                  <PostView key={post.id} post={post} author={author} />
+                ))}
+              </>
+            )}
           </div>
         </div>
       </main>
