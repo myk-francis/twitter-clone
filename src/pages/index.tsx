@@ -1,7 +1,7 @@
 import React from "react";
 import { type NextPage } from "next";
 import Head from "next/head";
-// import Link from "next/link";
+import Link from "next/link";
 import { api } from "~/utils/api";
 import { SignOutButton, useUser, SignInButton } from "@clerk/nextjs";
 import Image from "next/image";
@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import LoadingSpinner from "~/components/loading";
 dayjs.extend(relativeTime);
+import toast from "react-hot-toast";
 
 const CreatePostWizard = () => {
   const { user } = useUser();
@@ -19,6 +20,14 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.posts.getAll.invalidate();
     },
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Something went wrong!");
+      }
+    },
   });
   const [input, setInput] = React.useState<string>("");
 
@@ -27,7 +36,7 @@ const CreatePostWizard = () => {
   if (!user) return null;
 
   return (
-    <div className="flex w-full gap-3">
+    <div className="flex w-full gap-3 ">
       <Image
         src={user.profileImageUrl}
         alt="Profile Picture"
@@ -36,19 +45,33 @@ const CreatePostWizard = () => {
         height={50}
       />
       <input
+        disabled={isPosting}
         type="text"
         placeholder="Type some emojis"
         className="grow bg-transparent"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            mutate({ content: input });
+          }
+        }}
       />
-      <button
-        className="btn btn-primary"
-        onClick={() => mutate({ content: input })}
-        disabled={isPosting}
-      >
-        Post
-      </button>
+      {isPosting === false ? (
+        <button
+          className="btn btn-primary"
+          onClick={() => mutate({ content: input })}
+          disabled={isPosting}
+        >
+          Post
+        </button>
+      ) : null}
+      {isPosting === true ? (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={20} />
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -69,10 +92,18 @@ const PostView = (props: PostWithUser) => {
       />
       <div className="flex flex-col">
         <div className="flex gap-3">
-          <span className="font-bold text-slate-300">@{author.firstName}</span>
-          <span className="font-thin text-slate-300">
-            .{`${dayjs(post.createdAt).fromNow()}`}
-          </span>
+          <Link
+            href={`/@${author.firstName === null ? "user" : author.firstName}`}
+          >
+            <span className="font-bold text-slate-300">
+              @{author.firstName}
+            </span>
+          </Link>
+          <Link href={`/post/${post.id}`}>
+            <span className="font-thin text-slate-300">
+              .{`${dayjs(post.createdAt).fromNow()}`}
+            </span>
+          </Link>
         </div>
         <span>{post.content}</span>
       </div>
@@ -95,17 +126,13 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex h-screen justify-center">
         <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
-          <div className="flex border-b border-slate-200 p-4">
+          <div className="flex w-full border-b border-slate-200 p-4">
             {!isSignedIn && (
               <div className="flex justify-center">
                 <SignInButton />
               </div>
             )}
-            {!!isSignedIn && (
-              <div>
-                <CreatePostWizard />
-              </div>
-            )}
+            {!!isSignedIn && <CreatePostWizard />}
           </div>
           <div className="flex flex-col">
             {postsLoading ? (
