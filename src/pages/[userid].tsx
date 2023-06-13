@@ -1,13 +1,10 @@
 import React from "react";
-// import { type NextPage } from "next";
 import Head from "next/head";
 import { api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import LoadingSpinner from "~/components/loading";
 dayjs.extend(relativeTime);
-// import toast from "react-hot-toast";
-
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import superjson from "superjson";
@@ -19,24 +16,35 @@ import type {
 } from "next";
 import { PageLayout } from "~/components/layout";
 import Image from "next/image";
+import PostView from "~/components/postview";
 
-// const ProfileFeed = (props: { userId: string }) => {
-//   const { data, isLoading } = api.posts.getPostsByUserId.useQuery({
-//     userId: props.userId,
-//   });
+const ProfileFeed = (props: { userId: string }) => {
+  const { data, isLoading } = api.posts.getPostsByUserId.useQuery({
+    userId: props.userId,
+  });
 
-//   if (isLoading) return <LoadingPage />;
+  if (isLoading)
+    return (
+      <div className="flex h-full items-center justify-center">
+        <LoadingSpinner size={20} />
+      </div>
+    );
 
-//   if (!data || data.length === 0) return <div>User has not posted</div>;
+  if (!data || data.length === 0)
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div>User has not posted</div>
+      </div>
+    );
 
-//   return (
-//     <div className="flex flex-col">
-//       {data.map((fullPost) => (
-//         <PostView {...fullPost} key={fullPost.post.id} />
-//       ))}
-//     </div>
-//   );
-// };
+  return (
+    <div className="flex flex-col">
+      {data.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
 
 export default function ProfilePage(
   props: InferGetStaticPropsType<typeof getStaticProps>
@@ -78,6 +86,7 @@ export default function ProfilePage(
           data.firstName ?? "User"
         }`}</div>
         <div className="w-full border-b border-slate-400" />
+        <ProfileFeed userId={userid} />
       </PageLayout>
     </>
   );
